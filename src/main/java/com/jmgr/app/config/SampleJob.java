@@ -13,6 +13,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
 
+import com.jmgr.app.listener.FirstJobListener;
+import com.jmgr.app.listener.FirstStepListener;
 import com.jmgr.app.service.ThirdTasklet;
 
 @Configuration
@@ -21,6 +23,12 @@ public class SampleJob {
     @Autowired
     private ThirdTasklet thirdTasklet;
 
+    @Autowired
+    private FirstJobListener firstJobListener;
+
+    @Autowired
+    private FirstStepListener firstStepListener;
+
     @Bean
     public Job helloWorldJob(JobRepository jobRepository, Step helloWorldStep) {
         return new JobBuilder("helloWorldJob", jobRepository)
@@ -28,6 +36,7 @@ public class SampleJob {
                 .start(helloWorldStep)
                 .next(secondStep(jobRepository, secondTasklet()))
                 .next(thirdStep(jobRepository, thirdTasklet))
+                .listener(firstJobListener)
                 .build();
     }
 
@@ -37,6 +46,7 @@ public class SampleJob {
                                Tasklet helloWorldTasklet) {
         return new StepBuilder("helloWorldStep", jobRepository)
                 .tasklet(helloWorldTasklet, transactionManager)
+                .listener(firstStepListener)
                 .build();
     }
 
