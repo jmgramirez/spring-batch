@@ -15,7 +15,10 @@ import org.springframework.transaction.PlatformTransactionManager;
 
 import com.jmgr.app.listener.FirstJobListener;
 import com.jmgr.app.listener.FirstStepListener;
+import com.jmgr.app.processor.FirstItemProcessor;
+import com.jmgr.app.reader.FirstItemReader;
 import com.jmgr.app.service.ThirdTasklet;
+import com.jmgr.app.writer.FirstItemWritter;
 
 @Configuration
 public class SampleJob {
@@ -29,7 +32,16 @@ public class SampleJob {
     @Autowired
     private FirstStepListener firstStepListener;
 
-    @Bean
+    @Autowired
+    private FirstItemReader firstItemReader;
+
+    @Autowired
+    private FirstItemProcessor firstItemProcessor;
+
+    @Autowired
+    private FirstItemWritter firstItemWritter;
+
+    //@Bean
     public Job helloWorldJob(JobRepository jobRepository, Step helloWorldStep) {
         return new JobBuilder("helloWorldJob", jobRepository)
                 .incrementer(new RunIdIncrementer())
@@ -80,6 +92,25 @@ public class SampleJob {
                                Tasklet thirdTasklet) {
         return new StepBuilder("Third Step", jobRepository)
                                .tasklet(thirdTasklet/* ,transactionManager*/)
+                .build();
+    }
+
+
+    @Bean
+    public Job SecondJobOrientedChunks(JobRepository jobRepository, Step helloWorldStep) {
+        return new JobBuilder("SecondJobOrientedChunks", jobRepository)
+                .incrementer(new RunIdIncrementer())
+                .start(chunkStep(jobRepository))
+                .next(helloWorldStep)
+                .build();
+    }
+
+    public Step chunkStep(JobRepository jobRepository) {
+        return new StepBuilder("Chunk Step", jobRepository)
+                .<Integer, String>chunk(3)
+                .reader(firstItemReader)
+                .processor(firstItemProcessor)
+                .writer(firstItemWritter)
                 .build();
     }
 
